@@ -13,6 +13,7 @@ services.AddRateLimiter<RedisRateLimiter>(TimeSpan.FromSeconds(1), 50, "10.45.11
 调用:
 
 ```c#
+ var _timeLimiter = GetService<TimeLimiter>();
  _timeLimiter.Enqueue(() => ConsoleIt(i))
 ```
 

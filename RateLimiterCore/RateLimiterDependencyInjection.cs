@@ -23,23 +23,8 @@ namespace RateLimiterCore
         /// <param name="timeSpan">The time span.</param>
         /// <param name="count">The count.</param>
         /// <param name="redisConnectString">The redis connect string.</param>
-        public static void AddRateLimiter<T>(this IServiceCollection service, TimeSpan timeSpan, int count = 50,string redisConnectString="") where T : class, IRateLimiter
+        public static void AddRateLimiter(this IServiceCollection service, TimeSpan timeSpan, int count = 50,string redisConnectString="")
         {
-            if (count <= 0)
-            {
-                throw new ArgumentException("count should be strictly positive", nameof(count));
-            }
-
-            if (timeSpan.TotalMilliseconds <= 0)
-            {
-                throw new ArgumentException("timeSpan should be strictly positive", nameof(timeSpan));
-            }
-
-            if (string.IsNullOrEmpty(redisConnectString) && typeof(T) == typeof(RedisRateLimiter))
-            {
-                throw new ArgumentException("redisConnectString is empty", nameof(redisConnectString));
-            }
-
             service.AddOptions().Configure<RateLimitRule>(rule =>
                  {
                      rule.LimitNumber = count;
@@ -47,7 +32,6 @@ namespace RateLimiterCore
                      rule.RedisConnectString = redisConnectString;
                  });
 
-            service.AddScoped<IRateLimiter, T>();
             service.AddSingleton<TimeLimiter>();
         }
     }

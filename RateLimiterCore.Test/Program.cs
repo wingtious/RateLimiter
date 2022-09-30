@@ -21,7 +21,7 @@ namespace RateLimiterCore.Test
         public static IServiceScope Register()
         {
             var services = new ServiceCollection();
-            services.AddRateLimiter<RedisRateLimiter>(TimeSpan.FromSeconds(1), 50, "10.45.11.168:6001,password=goatest@!$%");
+            services.AddRateLimiter(TimeSpan.FromSeconds(1), 50, "10.45.11.168:6001,password=goatest@!$%");
             services.AddScoped<Test>();
             ServiceProviderExtensions.SetServiceProvider(services);
             return ServiceProviderExtensions.CreateScope();

@@ -5,7 +5,7 @@
 注入:
 
 ```c#
-services.AddRateLimiter<RedisRateLimiter>(TimeSpan.FromSeconds(1), 50, "10.45.11.168:6001,password=goatest@!$%");
+services.AddRateLimiter(TimeSpan.FromSeconds(1), 50, "10.45.11.168:6001,password=goatest@!$%");
 ```
 
 参数:一定时间内,发送消息频率,如果使用RedisRateLimiter,需要提供 redis地址.
@@ -14,7 +14,7 @@ services.AddRateLimiter<RedisRateLimiter>(TimeSpan.FromSeconds(1), 50, "10.45.11
 
 ```c#
  var _timeLimiter = GetService<TimeLimiter>();
- _timeLimiter.Enqueue(() => ConsoleIt(i))
+ await _timeLimiter.Enqueue<RedisRateLimiter>(() => ConsoleIt(i), $"_timeLimiter_{i % 2}");
 ```
 
 测试结果

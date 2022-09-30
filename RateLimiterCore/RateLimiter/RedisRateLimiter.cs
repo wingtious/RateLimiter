@@ -26,6 +26,11 @@ namespace RateLimiterCore.RateLimiter
         /// <param name="updatable">If rules can be updated</param>
         public RedisRateLimiter(RateLimitRule rule, string targetKey)
         {
+            if (string.IsNullOrEmpty(rule.RedisConnectString))
+            {
+                throw new ArgumentException("redisConnectString is empty", nameof(rule.RedisConnectString));
+            }
+
             _targetKey = targetKey;
             _rule = rule;
             _redisClient = ConnectionMultiplexer.Connect(_rule.RedisConnectString);

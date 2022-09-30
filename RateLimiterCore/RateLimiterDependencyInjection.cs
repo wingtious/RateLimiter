@@ -44,7 +44,7 @@ namespace RateLimiterCore
                  {
                      rule.LimitNumber = count;
                      rule.TimeSpan = timeSpan;
-                     rule.RedisConnectString = redisConnectString;  
+                     rule.RedisConnectString = redisConnectString;
                  });
 
             service.AddScoped<IRateLimiter, T>();

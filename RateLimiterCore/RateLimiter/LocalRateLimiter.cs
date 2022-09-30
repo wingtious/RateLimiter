@@ -21,9 +21,9 @@ namespace RateLimiterCore.RateLimiter
         private SemaphoreSlim _Semaphore { get; } = new SemaphoreSlim(1, 1);
 
 
-        public LocalRateLimiter(IOptions<RateLimitRule> option)
+        public LocalRateLimiter(RateLimitRule rule, string targetKey)
         {
-            _rule = option.Value;
+            _rule = rule;
             _TimeStamps = new LimitedSizeStack<DateTime>(_rule.LimitNumber);
         }
 

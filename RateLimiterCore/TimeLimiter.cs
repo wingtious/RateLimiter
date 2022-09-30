@@ -1,7 +1,11 @@
 ﻿using ComposableAsync;
+using Microsoft.Extensions.Options;
+using RateLimiterCore.Common;
 using RateLimiterCore.RateLimiter;
 using StackExchange.Redis;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,13 +14,15 @@ namespace RateLimiter
     /// <summary>
     /// TimeLimiter implementation
     /// </summary>
-    public class TimeLimiter : IDispatcher
+    public class TimeLimiter
     {
-        private readonly IRateLimiter _AwaitableConstraint;
+        private readonly ConcurrentDictionary<string, IRateLimiter> dic = new ConcurrentDictionary<string, IRateLimiter>();
+        private readonly RateLimitRule _rule;
 
-        public TimeLimiter(IRateLimiter awaitableConstraint)
+        public TimeLimiter(IOptions<RateLimitRule> options)
         {
-            _AwaitableConstraint = awaitableConstraint;
+            _rule = options.Value;
+            dic["default_TimeLimiter"] = new LocalRateLimiter(options.Value, "default_TimeLimiter");
         }
 
         /// <summary>
@@ -25,91 +31,9 @@ namespace RateLimiter
         /// </summary>
         /// <param name="perform"></param>
         /// <returns></returns>
-        public Task Enqueue(Func<Task> perform) 
+        public Task Enqueue<TRateLimiter>(Func<Task> perform, string targetKey= "default_TimeLimiter", RateLimitRule rule = null) where TRateLimiter : IRateLimiter
         {
-            return Enqueue(perform, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Perform the given task respecting the time constraint
-        /// returning the result of given function
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="perform"></param>
-        /// <returns></returns>
-        public Task<T> Enqueue<T>(Func<Task<T>> perform) 
-        {
-            return Enqueue(perform, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Perform the given task respecting the time constraint
-        /// </summary>
-        /// <param name="perform"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public async Task Enqueue(Func<Task> perform, CancellationToken cancellationToken) 
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await _AwaitableConstraint.Invoke(cancellationToken);
-            await perform();
-        }
-
-        /// <summary>
-        /// Perform the given task respecting the time constraint
-        /// returning the result of given function
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="perform"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public async Task<T> Enqueue<T>(Func<Task<T>> perform, CancellationToken cancellationToken) 
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await _AwaitableConstraint.Invoke(cancellationToken);
-            return await perform();
-        }
-
-        public IDispatcher Clone() 
-        {
-            throw new Exception();
-        }
-
-        private static Func<Task> Transform(Action act) 
-        {
-            return () => { act(); return Task.FromResult(0); };
-        }
-
-        /// <summary>
-        /// Perform the given task respecting the time constraint
-        /// returning the result of given function
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="compute"></param>
-        /// <returns></returns>
-        private static Func<Task<T>> Transform<T>(Func<T> compute) 
-        {
-            return () =>  Task.FromResult(compute()); 
-        }
-
-        /// <summary>
-        /// Perform the given task respecting the time constraint
-        /// </summary>
-        /// <param name="perform"></param>
-        /// <returns></returns>
-        public Task Enqueue(Action perform) 
-        {
-            var transformed = Transform(perform);
-            return Enqueue(transformed);
-        }
-
-        /// <summary>
-        ///  Perform the given task respecting the time constraint
-        /// </summary>
-        /// <param name="action"></param>
-        public void Dispatch(Action action)
-        {
-            Enqueue(action);
+           return Binding<TRateLimiter>(targetKey, rule).Run(perform, CancellationToken.None);
         }
 
         /// <summary>
@@ -119,36 +43,50 @@ namespace RateLimiter
         /// <typeparam name="T"></typeparam>
         /// <param name="perform"></param>
         /// <returns></returns>
-        public Task<T> Enqueue<T>(Func<T> perform) 
+        public Task<T> Enqueue<T, TRateLimiter>(Func<Task<T>> perform, string targetKey = "default_TimeLimiter", RateLimitRule rule = null) where TRateLimiter : IRateLimiter
         {
-            var transformed = Transform(perform);
-            return Enqueue(transformed);
+            return Binding<TRateLimiter>(targetKey, rule).Run(perform,CancellationToken.None);
         }
 
         /// <summary>
         /// Perform the given task respecting the time constraint
         /// returning the result of given function
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="perform"></param>
-        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task<T> Enqueue<T>(Func<T> perform, CancellationToken cancellationToken) 
+        public Task Enqueue<TRateLimiter>(Action perform, string targetKey = "default_TimeLimiter", RateLimitRule rule = null) where TRateLimiter : IRateLimiter
         {
-            var transformed = Transform(perform);
-            return Enqueue(transformed, cancellationToken);
+            return Binding<TRateLimiter>(targetKey, rule).Run(perform, CancellationToken.None);
         }
 
-            /// <summary>
+        /// <summary>
         /// Perform the given task respecting the time constraint
+        /// returning the result of given function
         /// </summary>
         /// <param name="perform"></param>
-        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task Enqueue(Action perform, CancellationToken cancellationToken) 
+        public Task Enqueue<T, TRateLimiter>(Func<T> perform, string targetKey = "default_TimeLimiter", RateLimitRule rule = null) where TRateLimiter : IRateLimiter
         {
-           var transformed = Transform(perform);
-           return Enqueue(transformed, cancellationToken);
+            return Binding<TRateLimiter>(targetKey, rule).Run(perform, CancellationToken.None);
         }
+
+        public IRateLimiter Binding<T>(string targetKey, RateLimitRule rule) where T : IRateLimiter
+        {
+            if (dic.TryGetValue(targetKey, out var inst))
+            {
+                return inst;
+            }
+            else
+            {
+                if (rule == null)
+                {
+                    rule = _rule;
+                }
+
+                return dic.GetOrAdd(targetKey, (IRateLimiter)Activator.CreateInstance(typeof(T), new object[] { rule, targetKey })!);
+            } 
+        }
+
+
     }
 }

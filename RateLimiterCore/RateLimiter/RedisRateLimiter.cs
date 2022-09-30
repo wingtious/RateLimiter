@@ -24,9 +24,10 @@ namespace RateLimiterCore.RateLimiter
         /// <param name="redisClient">The redis client</param>
         /// <param name="timeProvider">The time provider</param>
         /// <param name="updatable">If rules can be updated</param>
-        public RedisRateLimiter(IOptions<RateLimitRule> option)
+        public RedisRateLimiter(RateLimitRule rule, string targetKey)
         {
-            _rule = option.Value;
+            _targetKey = targetKey;
+            _rule = rule;
             _redisClient = ConnectionMultiplexer.Connect(_rule.RedisConnectString);
             if (_redisClient == null)
             {

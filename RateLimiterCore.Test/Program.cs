@@ -48,7 +48,7 @@ namespace RateLimiterCore.Test
         {
             for (int i = 0; i < 500; i++)
             {
-                await _timeLimiter.Enqueue(() => ConsoleIt(i));
+                await _timeLimiter.Enqueue<RedisRateLimiter>(() => ConsoleIt(i), $"_timeLimiter_{i % 2}");
             }
 
             var l = data.GroupBy(x => x);

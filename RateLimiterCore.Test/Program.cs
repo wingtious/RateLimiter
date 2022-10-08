@@ -31,8 +31,8 @@ namespace RateLimiterCore.Test
     public class Test
     {
         private List<string> data = new List<string>();
-        private readonly TimeLimiter _timeLimiter;
-        public Test(TimeLimiter timeLimiter)
+        private readonly RateLimiterManager _timeLimiter;
+        public Test(RateLimiterManager timeLimiter)
         {
             _timeLimiter = timeLimiter;
         }

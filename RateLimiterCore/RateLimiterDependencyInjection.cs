@@ -32,7 +32,7 @@ namespace RateLimiterCore
                      rule.RedisConnectString = redisConnectString;
                  });
 
-            service.AddSingleton<TimeLimiter>();
+            service.AddSingleton<RateLimiterManager>();
         }
     }
 }

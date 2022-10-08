@@ -12,14 +12,14 @@ using System.Threading.Tasks;
 namespace RateLimiter
 {
     /// <summary>
-    /// TimeLimiter implementation
+    /// RateLimiter Extension implementation
     /// </summary>
-    public class TimeLimiter
+    public class RateLimiterManager
     {
         private readonly ConcurrentDictionary<string, IRateLimiter> dic = new ConcurrentDictionary<string, IRateLimiter>();
         private readonly RateLimitRule _rule;
 
-        public TimeLimiter(IOptions<RateLimitRule> options)
+        public RateLimiterManager(IOptions<RateLimitRule> options)
         {
             _rule = options.Value;
             dic["default_TimeLimiter"] = new LocalRateLimiter(options.Value, "default_TimeLimiter");
